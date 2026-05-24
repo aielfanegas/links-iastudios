@@ -564,9 +564,13 @@
 
     node.addEventListener("pointermove", function (e) {
       if (!drag) return;
-      var dx = (e.clientX - drag.sx) / drag.scale;
-      var dy = (e.clientY - drag.sy) / drag.scale;
-      if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+      // tap-vs-drag decided in screen pixels so it's independent of the
+      // responsive scale (otherwise touch jitter reads as a drag on mobile)
+      var rawdx = e.clientX - drag.sx;
+      var rawdy = e.clientY - drag.sy;
+      if (!drag.moved && Math.abs(rawdx) + Math.abs(rawdy) > 8) drag.moved = true;
+      var dx = rawdx / drag.scale;
+      var dy = rawdy / drag.scale;
       var nx = drag.ox + dx;
       var ny = drag.oy + dy;
       var pad = 4;
