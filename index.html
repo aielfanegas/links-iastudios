@@ -2,14 +2,22 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>MOVIL.LINKS — Mis Proyectos</title>
+<meta name="theme-color" content="#0a0a0d"/>
+<!-- Launch full-screen, no browser chrome, when added to the home screen -->
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Mis Proyectos"/>
+<link rel="apple-touch-icon" href="iastudios.png"/>
+<link rel="manifest" href="manifest.webmanifest"/>
 <style>
   :root {
     --screen-w: 402px;
     --screen-h: 874px;
   }
-  html, body { margin: 0; padding: 0; background: #0d0d10; }
+  html, body { margin: 0; padding: 0; background: #0d0d10; overscroll-behavior: none; }
   * { box-sizing: border-box; }
   body {
     height: 100vh; height: 100dvh;
@@ -176,6 +184,27 @@
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes folderPop { 0% { opacity: 0; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
   .jiggling .tile:not(.dragging) { animation: jiggle 0.45s infinite alternate ease-in-out; }
+
+  /* ── Mobile-first: real phone fills the whole screen ─────── */
+  @media (max-width: 600px) {
+    body { align-items: stretch; justify-content: stretch; }
+    .scene { display: none; }
+    .stage { width: 100% !important; height: 100% !important; }
+    .device {
+      width: 100%; height: 100%;
+      border-radius: 0; box-shadow: none;
+      transform: none !important;
+    }
+    /* the real OS draws the status bar / island / home bar */
+    .island, .statusbar, .home-indicator { display: none; }
+    /* push UI clear of the real notch / camera + gesture bar */
+    .header { top: calc(28px + env(safe-area-inset-top, 0px)); }
+    .hud {
+      top: calc(20px + env(safe-area-inset-top, 0px));
+      right: calc(14px + env(safe-area-inset-right, 0px));
+    }
+    .dots { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+  }
 </style>
 </head>
 <body>
@@ -233,11 +262,14 @@
   var SQUIRCLE = 22;       // borderRadius = size * 22%
   var SCREEN_W = 402;
   var SCREEN_H = 874;
-  var LS_KEY = "movil-links-positions-v8";
+  var LS_KEY = "movil-links-positions-v9"; // v9 = fractional positions (0..1)
 
   // Baked design defaults (from the design's TWEAK_DEFAULTS).
-  var ICON_SIZE = 58;
-  var DOCK_SIZE = 56;
+  // Phones get larger icons for comfier touch targets; the desktop mockup
+  // keeps the true 402-wide iPhone proportions.
+  var IS_PHONE = window.matchMedia("(max-width: 600px)").matches;
+  var ICON_SIZE = IS_PHONE ? 66 : 58;
+  var DOCK_SIZE = IS_PHONE ? 64 : 56;
   var DOT_COUNT = 4;
 
   // ── Icon glyphs (original brand-evocative drawings, scaled by size) ──
@@ -449,17 +481,28 @@
   }
 
   // ── State ─────────────────────────────────────────────────
-  var defaults = defaultPositions();
+  // Positions are stored as FRACTIONS of the live screen (fx, fy ∈ 0..1)
+  // so the layout reflows on any viewport — phone full-screen or desktop
+  // mockup — without cropping or distortion. Defaults are derived from the
+  // 402×874 design space, then divided into fractions.
+  function toFractions(px) {
+    var f = {};
+    for (var k in px) f[k] = { fx: px[k].x / SCREEN_W, fy: px[k].y / SCREEN_H };
+    return f;
+  }
+  var defaults = toFractions(defaultPositions());
   var positions = loadPositions();
   var jiggling = false;
 
   function loadPositions() {
     var base = {};
-    for (var k in defaults) base[k] = { x: defaults[k].x, y: defaults[k].y };
+    for (var k in defaults) base[k] = { fx: defaults[k].fx, fy: defaults[k].fy };
     try {
       var saved = JSON.parse(localStorage.getItem(LS_KEY) || "null");
       if (saved && typeof saved === "object") {
-        for (var key in saved) base[key] = saved[key];
+        for (var key in saved) {
+          if (saved[key] && typeof saved[key].fx === "number") base[key] = saved[key];
+        }
       }
     } catch (e) {}
     return base;
@@ -478,20 +521,35 @@
   var tileEls = {};
 
   // ── Responsive fit (mobile-first) ─────────────────────────
-  // Scale the fixed 402×874 frame to fill the viewport, keeping aspect
-  // ratio. getBoundingClientRect() reflects the scale, so drag math
-  // (scale = rect.width / SCREEN_W) keeps working untouched.
+  // Phone (≤600px): the device IS the screen — fill edge-to-edge, no
+  // transform, no fake chrome. CSS handles the bleed; JS just clears any
+  // desktop scaling and reflows tiles for the live viewport size.
+  // Desktop: scale the 402×874 mockup to fit, framed and centered.
+  var phoneMQ = window.matchMedia("(max-width: 600px)");
   function fit() {
-    var margin = 14; // keep the white frame off the screen edges
-    var s = Math.min(
-      (window.innerWidth - margin) / SCREEN_W,
-      (window.innerHeight - margin) / SCREEN_H
-    );
-    s = Math.min(s, 1); // never upscale past native size on desktop
-    device.style.transform = "scale(" + s + ")";
-    stage.style.width = (SCREEN_W * s) + "px";
-    stage.style.height = (SCREEN_H * s) + "px";
+    if (phoneMQ.matches) {
+      device.style.transform = "none";
+      stage.style.width = "";
+      stage.style.height = "";
+    } else {
+      var margin = 14; // keep the white frame off the screen edges
+      var s = Math.min(
+        (window.innerWidth - margin) / SCREEN_W,
+        (window.innerHeight - margin) / SCREEN_H
+      );
+      s = Math.min(s, 1); // never upscale past native size on desktop
+      device.style.transform = "scale(" + s + ")";
+      stage.style.width = (SCREEN_W * s) + "px";
+      stage.style.height = (SCREEN_H * s) + "px";
+    }
+    relayout();
   }
+
+  // Re-place every tile from its fraction against the live home box.
+  function relayout() {
+    for (var id in tileEls) applyPosition(tileEls[id], id);
+  }
+
   window.addEventListener("resize", fit);
   fit();
 
@@ -546,8 +604,11 @@
 
   function applyPosition(node, id) {
     var p = positions[id] || defaults[id];
-    node.style.left = p.x + "px";
-    node.style.top = p.y + "px";
+    // offsetWidth/Height = layout size (ignores the desktop CSS transform),
+    // so this is the real px box on phone and the 402×874 box on desktop.
+    var W = home.offsetWidth, H = home.offsetHeight;
+    node.style.left = (p.fx * W) + "px";
+    node.style.top = (p.fy * H) + "px";
   }
 
   // ── Drag + tap behaviour ──────────────────────────────────
@@ -561,11 +622,13 @@
       if (e.target.closest && e.target.closest("a[data-folder-link]")) return;
       e.preventDefault();
       var rect = home.getBoundingClientRect();
+      var W = home.offsetWidth, H = home.offsetHeight;
       var p = positions[app.id] || defaults[app.id];
       st = {
         sx: e.clientX, sy: e.clientY,
-        ox: p.x, oy: p.y,
-        scale: rect.width / SCREEN_W,
+        ox: p.fx * W, oy: p.fy * H,   // current px in the live home box
+        W: W, H: H,
+        scale: rect.width / W,        // 1 on phone; transform scale on desktop
         dragging: false, canceled: false,
         timer: setTimeout(function () {
           if (!st || st.canceled) return;
@@ -585,9 +648,9 @@
         var nx = st.ox + rawdx / st.scale;
         var ny = st.oy + rawdy / st.scale;
         var pad = 4;
-        nx = Math.max(pad, Math.min(SCREEN_W - size - pad, nx));
-        ny = Math.max(60, Math.min(SCREEN_H - size - 40, ny));
-        positions[app.id] = { x: nx, y: ny };
+        nx = Math.max(pad, Math.min(st.W - size - pad, nx));
+        ny = Math.max(60, Math.min(st.H - size - 40, ny));
+        positions[app.id] = { fx: nx / st.W, fy: ny / st.H }; // store relative
         node.style.left = nx + "px";
         node.style.top = ny + "px";
       } else if (Math.abs(rawdx) + Math.abs(rawdy) > MOVE_CANCEL) {
@@ -648,7 +711,7 @@
   btnReset.addEventListener("click", function () {
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     positions = {};
-    for (var k in defaults) positions[k] = { x: defaults[k].x, y: defaults[k].y };
+    for (var k in defaults) positions[k] = { fx: defaults[k].fx, fy: defaults[k].fy };
     for (var id in tileEls) applyPosition(tileEls[id], id);
   });
 
@@ -673,6 +736,7 @@
   renderDots();
   APPS_TOP.forEach(function (a) { buildTile(a, false); });
   APPS_DOCK.forEach(function (a) { buildTile(a, true); });
+  relayout(); // place tiles against the now-known home box
 })();
 </script>
 </body>

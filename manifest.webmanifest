@@ -1,0 +1,14 @@
+{
+  "name": "Mis Proyectos — IAstudios",
+  "short_name": "Mis Proyectos",
+  "description": "Enlaces a mis proyectos y redes.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0d",
+  "theme_color": "#0a0a0d",
+  "icons": [
+    { "src": "iastudios.png", "sizes": "any", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
