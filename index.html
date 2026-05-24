@@ -608,8 +608,15 @@
         savePositions();
       } else if (!wasCanceled) {
         // quick tap → open folder or link
-        if (app.folder) openFolder(app);
-        else window.open(app.url, "_blank", "noopener");
+        if (app.folder) {
+          openFolder(app);
+          // the click synthesized after this tap would land on the modal
+          // backdrop and close it instantly — swallow that one click
+          var stop = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+          window.addEventListener("click", stop, { once: true, capture: true });
+        } else {
+          window.open(app.url, "_blank", "noopener");
+        }
       }
     }
     node.addEventListener("pointerup", end);
