@@ -515,6 +515,9 @@
       node.href = app.url;
       node.target = "_blank";
       node.rel = "noopener noreferrer";
+      // opening is handled on tap in pointerup; block native click so a
+      // drag/long-press never also navigates
+      node.addEventListener("click", function (e) { e.preventDefault(); });
     }
 
     var iconEl = app.folder ? makeFolderIcon(app.contents, size) : makeIcon(app.glyph, size);
@@ -548,52 +551,65 @@
   }
 
   // ── Drag + tap behaviour ──────────────────────────────────
+  var LONG_MS = 350;       // hold this long to pick an icon up (iOS-style)
+  var MOVE_CANCEL = 12;    // screen px of motion before the hold = a swipe, cancel
+
   function attachDrag(node, app, size) {
-    var drag = null;
+    var st = null;         // active press state
 
     node.addEventListener("pointerdown", function (e) {
       if (e.target.closest && e.target.closest("a[data-folder-link]")) return;
       e.preventDefault();
-      var stageRect = home.getBoundingClientRect();
-      var scale = stageRect.width / SCREEN_W;
+      var rect = home.getBoundingClientRect();
       var p = positions[app.id] || defaults[app.id];
-      drag = { sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, scale: scale, moved: false };
-      node.classList.add("dragging");
+      st = {
+        sx: e.clientX, sy: e.clientY,
+        ox: p.x, oy: p.y,
+        scale: rect.width / SCREEN_W,
+        dragging: false, canceled: false,
+        timer: setTimeout(function () {
+          if (!st || st.canceled) return;
+          st.dragging = true;                 // long-press → enter drag mode
+          node.classList.add("dragging");
+          if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e2) {} }
+        }, LONG_MS)
+      };
       try { node.setPointerCapture(e.pointerId); } catch (err) {}
     });
 
     node.addEventListener("pointermove", function (e) {
-      if (!drag) return;
-      // tap-vs-drag decided in screen pixels so it's independent of the
-      // responsive scale (otherwise touch jitter reads as a drag on mobile)
-      var rawdx = e.clientX - drag.sx;
-      var rawdy = e.clientY - drag.sy;
-      if (!drag.moved && Math.abs(rawdx) + Math.abs(rawdy) > 8) drag.moved = true;
-      var dx = rawdx / drag.scale;
-      var dy = rawdy / drag.scale;
-      var nx = drag.ox + dx;
-      var ny = drag.oy + dy;
-      var pad = 4;
-      nx = Math.max(pad, Math.min(SCREEN_W - size - pad, nx));
-      ny = Math.max(60, Math.min(SCREEN_H - size - 40, ny));
-      positions[app.id] = { x: nx, y: ny };
-      node.style.left = nx + "px";
-      node.style.top = ny + "px";
+      if (!st) return;
+      var rawdx = e.clientX - st.sx;
+      var rawdy = e.clientY - st.sy;
+      if (st.dragging) {
+        var nx = st.ox + rawdx / st.scale;
+        var ny = st.oy + rawdy / st.scale;
+        var pad = 4;
+        nx = Math.max(pad, Math.min(SCREEN_W - size - pad, nx));
+        ny = Math.max(60, Math.min(SCREEN_H - size - 40, ny));
+        positions[app.id] = { x: nx, y: ny };
+        node.style.left = nx + "px";
+        node.style.top = ny + "px";
+      } else if (Math.abs(rawdx) + Math.abs(rawdy) > MOVE_CANCEL) {
+        clearTimeout(st.timer);               // moved before holding → swipe, no action
+        st.canceled = true;
+      }
     });
 
     function end(e) {
-      if (!drag) return;
-      var wasMoved = drag.moved;
-      drag = null;
-      node.classList.remove("dragging");
+      if (!st) return;
+      clearTimeout(st.timer);
+      var wasDragging = st.dragging;
+      var wasCanceled = st.canceled;
+      st = null;
       try { node.releasePointerCapture(e.pointerId); } catch (err) {}
-      savePositions();
-      if (wasMoved) {
-        // swallow the click that follows a drag so links don't fire
-        var stop = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
-        window.addEventListener("click", stop, { once: true, capture: true });
-      } else if (app.folder) {
-        openFolder(app);
+      if (wasDragging) {
+        node.classList.remove("dragging");
+        savePositions();
+      } else if (!wasCanceled) {
+        // quick tap → open folder or link
+        if (app.folder) openFolder(app);
+        else window.open(app.url, "_blank", "noopener");
       }
     }
     node.addEventListener("pointerup", end);
