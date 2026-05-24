@@ -103,6 +103,19 @@
   }
   .hud button.active { background: rgba(255,255,255,0.85); color: #111; }
 
+  /* ── Dock glass bar ─────────────────────────────────────── */
+  .dock {
+    position: absolute; z-index: 1; pointer-events: none;
+    border-radius: 34px;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    box-shadow:
+      inset 0 0.5px 0 rgba(255,255,255,0.35),
+      inset 0 0 0 0.5px rgba(255,255,255,0.18),
+      0 10px 30px rgba(0,0,0,0.28);
+  }
+
   /* ── App tiles ──────────────────────────────────────────── */
   .tile {
     position: absolute; text-decoration: none; color: inherit;
@@ -236,6 +249,7 @@
 
     <div class="home" id="home" data-stage="1">
       <div class="vignette"></div>
+      <div class="dock" id="dock"></div>
       <div class="header">
         <div class="sub" id="today">Domingo · 24 mayo</div>
         <div class="title">Mis Proyectos</div>
@@ -268,7 +282,7 @@
   // Phones get larger icons for comfier touch targets; the desktop mockup
   // keeps the true 402-wide iPhone proportions.
   var IS_PHONE = window.matchMedia("(max-width: 600px)").matches;
-  var ICON_SIZE = IS_PHONE ? 66 : 58;
+  var ICON_SIZE = IS_PHONE ? 54 : 47;
   var DOCK_SIZE = IS_PHONE ? 64 : 56;
   var DOT_COUNT = 4;
 
@@ -453,7 +467,7 @@
   ];
 
   var APPS_DOCK = [
-    { id: "ias",          name: "IAstudios",  url: "https://iastudios.es", glyph: "ias" },
+    { id: "ias",          name: "Web",        url: "https://iastudios.es", glyph: "ias" },
     { id: "wa",           name: "WhatsApp",   url: "https://wa.me/",       glyph: "whatsapp" },
     { id: "redes-folder", name: "Redes",      folder: true, contents: REDES_CONTENTS }
   ];
@@ -548,6 +562,19 @@
   // Re-place every tile from its fraction against the live home box.
   function relayout() {
     for (var id in tileEls) applyPosition(tileEls[id], id);
+    positionDock();
+  }
+
+  // Glass dock bar — sized as fractions of the live home box so it tracks
+  // the dock tiles on phone full-screen and the 402×874 desktop mockup alike.
+  var dockGlass = document.getElementById("dock");
+  function positionDock() {
+    if (!dockGlass) return;
+    var W = home.offsetWidth, H = home.offsetHeight;
+    dockGlass.style.left   = (0.097 * W) + "px";
+    dockGlass.style.width  = (0.806 * W) + "px";
+    dockGlass.style.top    = (0.803 * H) + "px";
+    dockGlass.style.height = (0.114 * H) + "px";
   }
 
   window.addEventListener("resize", fit);
