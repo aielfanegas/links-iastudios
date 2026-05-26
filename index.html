@@ -276,7 +276,7 @@
   var SQUIRCLE = 22;       // borderRadius = size * 22%
   var SCREEN_W = 402;
   var SCREEN_H = 874;
-  var LS_KEY = "movil-links-positions-v9"; // v9 = fractional positions (0..1)
+  var LS_KEY = "movil-links-positions-v10"; // v10 = +vCard tile in dock
 
   // Baked design defaults (from the design's TWEAK_DEFAULTS).
   // Phones get larger icons for comfier touch targets; the desktop mockup
@@ -347,6 +347,23 @@
         '<path d="M6 19 L20 9 L34 19" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
         '<rect x="9" y="19" width="22" height="14" rx="1.5" stroke="#fff" stroke-width="2.6" fill="none"/>' +
         '<path d="M12 24h16M12 28h16" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>');
+    },
+    threads: function (s) {
+      return svg(s * 0.66,
+        '<path d="M19.8 32C13 32 8.5 27.4 8.5 20S13 8 19.8 8c4.6 0 7.9 2 9.6 5.4l-2.6 1.4c-1.2-2.4-3.5-3.9-7-3.9-5.2 0-8.4 3.6-8.4 9.1s3.2 9.1 8.4 9.1c3.1 0 5-1.2 6.2-3.1.5-.8.8-1.7.9-2.6-1.2-.7-2.8-1.1-4.6-1.1-3 0-4.9 1.2-4.9 3.2 0 1.3 1 2 2.3 2 1.9 0 3.1-1.4 3.4-3.6l2.7.4c-.5 3.4-2.6 5.6-6.1 5.6-3 0-5-1.8-5-4.5 0-3.3 2.9-5.3 7.5-5.3 1.9 0 3.6.3 5 .9.1 3.4-.9 6.3-2.9 8.3C25.9 30.9 23.2 32 19.8 32z" fill="#fff"/>');
+    },
+    vcard: function (s) {
+      return svg(s * 0.66,
+        '<rect x="6" y="9" width="28" height="22" rx="4" stroke="#fff" stroke-width="2.6" fill="none"/>' +
+        '<circle cx="15" cy="18" r="3.4" fill="#fff"/>' +
+        '<path d="M9.5 27c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+        '<path d="M24 16h6M24 20h6M24 24h4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>');
+    },
+    gmail: function (s) {
+      return svg(s * 0.7,
+        '<path d="M7 28V14.8c0-1.5 1.8-2.4 3-1.4L20 21l10-7.6c1.2-.9 3-.1 3 1.4V28" stroke="#EA4335" stroke-width="3.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M7 28V14.8c0-1.5 1.8-2.4 3-1.4" stroke="#4285F4" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M33 28V14.8c0-1.5-1.8-2.4-3-1.4" stroke="#34A853" stroke-width="3.2" fill="none" stroke-linecap="round"/>');
     }
   };
 
@@ -361,7 +378,10 @@
     youtube:   "linear-gradient(160deg, #FF4747 0%, #E11D1D 55%, #8E0F0F 100%)",
     ias:       "linear-gradient(160deg, #22D3EE 0%, #7C3AED 55%, #1E1B4B 100%)",
     whatsapp:  "linear-gradient(160deg, #34D26A 0%, #25B65E 55%, #0F7A3E 100%)",
-    dspot:     "linear-gradient(160deg, #FFB23E 0%, #F2682C 55%, #7A2B12 100%)"
+    dspot:     "linear-gradient(160deg, #FFB23E 0%, #F2682C 55%, #7A2B12 100%)",
+    threads:   "linear-gradient(160deg, #2A2A2E 0%, #0B0B0D 100%)",
+    vcard:     "linear-gradient(160deg, #34D399 0%, #0EA5E9 60%, #0C4A6E 100%)",
+    gmail:     "linear-gradient(160deg, #FFFFFF 0%, #F4F4F6 100%)"
   };
 
   // Photo icons — when present, replace the gradient + glyph with the image.
@@ -459,16 +479,23 @@
   ];
 
   var REDES_CONTENTS = [
-    { id: "r-ig", name: "Instagram", url: "https://instagram.com/", glyph: "instagram" },
-    { id: "r-fb", name: "Facebook",  url: "https://facebook.com/",  glyph: "facebook" },
-    { id: "r-li", name: "LinkedIn",  url: "https://linkedin.com/",  glyph: "linkedin" },
-    { id: "r-yt", name: "YouTube",   url: "https://youtube.com/",   glyph: "youtube" },
-    { id: "r-tt", name: "TikTok",    url: "https://tiktok.com/",    glyph: "tiktok" }
+    { id: "r-ig", name: "Instagram", url: "https://instagram.com/samueljimenez.ia",            glyph: "instagram" },
+    { id: "r-fb", name: "Facebook",  url: "https://facebook.com/1077284978810737",             glyph: "facebook" },
+    { id: "r-li", name: "LinkedIn",  url: "https://linkedin.com/in/samuel-jimenez-79a17a410",  glyph: "linkedin" },
+    { id: "r-yt", name: "YouTube",   url: "https://youtube.com/@samueljimenezia",              glyph: "youtube" },
+    { id: "r-tt", name: "TikTok",    url: "https://tiktok.com/@samueljimenez.ia",              glyph: "tiktok" },
+    { id: "r-th", name: "Threads",   url: "https://www.threads.com/@samueljimenez.ia",         glyph: "threads" },
+    { id: "r-gm", name: "Gmail",     url: "mailto:soporte@iastudios.es",                       glyph: "gmail" }
   ];
+
+  // vCard lives as a real file (contacto.vcf) so iOS/Android open the
+  // native "Add Contact" sheet reliably — see downloadVCard().
+  var VCARD_FILE = "contacto.vcf";
 
   var APPS_DOCK = [
     { id: "ias",          name: "Web",        url: "https://iastudios.es", glyph: "ias" },
-    { id: "wa",           name: "WhatsApp",   url: "https://wa.me/",       glyph: "whatsapp" },
+    { id: "wa",           name: "WhatsApp",   url: "https://wa.me/34614002886", glyph: "whatsapp" },
+    { id: "vcard",        name: "Contacto",   vcard: true, glyph: "vcard" },
     { id: "redes-folder", name: "Redes",      folder: true, contents: REDES_CONTENTS }
   ];
 
@@ -487,10 +514,13 @@
       "ninoox-folder": { x: col(2), y: topY },
       "dspot-folder":  { x: col(3), y: topY }
     };
-    // dock: web (left) · whatsapp (center) · redes folder (right)
-    p.ias             = { x: cx - 120 - dockHalf, y: dockY };
-    p.wa              = { x: cx       - dockHalf, y: dockY };
-    p["redes-folder"] = { x: cx + 120 - dockHalf, y: dockY };
+    // dock: web · whatsapp · contacto · redes — 4 across, ~80px apart
+    var dg = 80;
+    var dcol = function (i) { return cx + (i - 1.5) * dg - dockHalf; };
+    p.ias             = { x: dcol(0), y: dockY };
+    p.wa              = { x: dcol(1), y: dockY };
+    p.vcard           = { x: dcol(2), y: dockY };
+    p["redes-folder"] = { x: dcol(3), y: dockY };
     return p;
   }
 
@@ -591,12 +621,13 @@
 
   function buildTile(app, isDock) {
     var size = isDock ? DOCK_SIZE : ICON_SIZE;
-    var node = app.folder
-      ? document.createElement("div")
-      : document.createElement("a");
+    var isLink = !app.folder && !app.vcard;
+    var node = isLink
+      ? document.createElement("a")
+      : document.createElement("div");
     node.className = "tile";
     node.style.width = size + "px";
-    if (!app.folder) {
+    if (isLink) {
       node.href = app.url;
       node.target = "_blank";
       node.rel = "noopener noreferrer";
@@ -704,6 +735,8 @@
           // backdrop and close it instantly — swallow that one click
           var stop = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
           window.addEventListener("click", stop, { once: true, capture: true });
+        } else if (app.vcard) {
+          downloadVCard();
         } else {
           window.open(app.url, "_blank", "noopener");
         }
@@ -731,6 +764,40 @@
       modal.classList.remove("open");
     }
   });
+
+  // ── vCard download ────────────────────────────────────────
+  // Point a real anchor at contacto.vcf. iOS opens the "Add Contact"
+  // sheet, desktop/Android download the file. A real file (vs a Blob)
+  // survives standalone-PWA mode where Blob downloads can fail silently.
+  function downloadVCard() {
+    var a = document.createElement("a");
+    a.href = VCARD_FILE;
+    a.download = "Samuel-Jimenez.vcf";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast("Contacto descargado");
+  }
+
+  // Tiny transient toast for tap feedback.
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.textContent = msg;
+    t.style.cssText =
+      "position:absolute;left:50%;bottom:120px;transform:translateX(-50%);" +
+      "z-index:400;padding:10px 18px;border-radius:18px;color:#fff;" +
+      "font:500 13px -apple-system,system-ui;white-space:nowrap;" +
+      "background:rgba(30,30,36,0.72);backdrop-filter:blur(18px);" +
+      "-webkit-backdrop-filter:blur(18px);box-shadow:0 6px 20px rgba(0,0,0,0.35);" +
+      "opacity:0;transition:opacity 200ms ease;pointer-events:none;";
+    home.appendChild(t);
+    requestAnimationFrame(function () { t.style.opacity = "1"; });
+    setTimeout(function () {
+      t.style.opacity = "0";
+      setTimeout(function () { t.remove(); }, 250);
+    }, 1600);
+  }
 
   // ── HUD ───────────────────────────────────────────────────
   var btnReset = document.getElementById("btn-reset");
